@@ -1,0 +1,235 @@
+<!DOCTYPE html><html> <title>Oreoid's Run 1/Run 3 Level Data Converter</title>
+<body> <label for="run1DataInput" id="run1DataLabel">Run 1 level data: </label><input type="text" id="run1DataInput" placeholder="0xF|hint|0x123456"><button id="loaderButtonRun1" onclick="parseRun1();">Load</button>
+<label for="run3DataInput" id="run3DataLabel">Run 3 level data: </label><input type="text" id="run3DataInput" placeholder="layout-tunnel4,4|color-0x123456|terrain-pos-1"><button id="loaderButtonRun3" onclick="parseRun3();">Load</button>
+</body><script>
+var TerrainData = '';
+var TerrainBackend = [];
+var FullDataArray = [];
+var ColorData = '';
+var HintData = '';
+var TempArray = [];
+function parseRun1(){
+	console.log(run1ToRun3(document.getElementById('run1DataInput').value));
+}
+function parseRun3(){
+	console.log(run3ToRun1(document.getElementById('run3DataInput').value));
+}
+function run1ToRun3(param1){
+	if(!/^0x[0-9A-Fa-f]+\x7C[\x20-\x7B\x7D\x7E]*\x7C0x[0-9A-Fa-f]{6}$/.test(param1)){
+		alert('Use some run 1 level data.');
+		return null;
+	}
+	else{
+		let local1 = /^0x([0-9A-Fa-f]+)\x7C/.exec(param1);
+		let local2 = [];
+		TerrainData = local1[1];
+		local1 = /\x7C0x([0-9A-Fa-f]{6})$/.exec(param1);
+		ColorData = local1[1].toUpperCase();
+		local1 = TerrainData.split('');
+		for (let i = 0; i < local1.length; i++){
+			local2.push(parseInt(`${local1[i]}`, 16).toString(4).padStart(2, '0'));
+		}
+		local1 = local2.join('').split('');
+		while (!((local1.length % 3) == (0 % 3))){
+			local1.push('0');
+		}
+		local2 = [];
+		for (let i = 0; i < Math.round((local1.length) / 3); i++){
+			local2.push(String.fromCharCode(parseInt(`${local1[(3 * i)]}` + `${local1[(3 * i) + 1]}` + `${local1[(3 * i) + 2]}`, 4) + 48));
+		}
+		TerrainData = local2.join('');
+		return 'layout-tunnel4,4|color-0x' + ColorData + '|tileWidth-85|spawn-5|terrain-pos-' + TerrainData + ''; 
+	}
+}
+function run3ToRun1(param1){
+	ColorData = 'FFFFFF';
+	TerrainData = '1';
+	TerrainBackend = [];
+	let local1 = /layout-tunnel([0-9]+)\x2C([0-9]+)\x7C*/g.exec(param1);
+	let local2 = param1.split('|');
+	if (local1 == null){
+		alert('Use some Run 3 level data.');
+		return null;
+	}
+	switch (Number(local1[1]) * Number(local1[2])){
+		case 16: {
+			for (i = 0; i < local2.length; i++){
+				switch (true) {
+					case (/^color[0]{0,1}\x2D0x[0-9A-Fa-f]{6}$/.test(local2[i])) : {
+						let local3 = /^color[0]{0,1}\x2D0x([0-9A-Fa-f]{6})$/.exec(local2[i]);
+						ColorData = local3[1].toUpperCase();
+						break;
+					}
+					case (/^terrain\x2D/.test(local2[i])) : {
+						let local3 = (/pos\x2D([\x2A0-o]+)/.exec(local2[i]))[1];
+						let local4 = '';
+						let local5 = [];
+						while(!/^[0-o]+$/.test(local3)){
+							local4 = (/[0-o]([\x2A]{1,})[0-o]/g.exec(local3))[1];
+							local5 = (new RegExp("([0-o]{" + local4.length + "})([\x2A]{" + local4.length + "})([0-o]{1})")).exec(local3);
+							local5.push(local5[1].repeat(local5[3].charCodeAt(0) - 48));
+							local3 = local3.split(local5[1] + local5[2] + local5[3]).join(local5[4]);
+						}
+						local5 = local3.split('');
+						for (let j = 0; j < local5.length; j++){
+							local5.splice(j, 1, (local5[j].charCodeAt(0) - 48).toString(4).padStart(3, '0'));
+						}
+						local5 = local5.join('').split('');
+						while (local5.length > TerrainBackend.length){
+							TerrainBackend.push('0');
+						}
+						while (local5.length < TerrainBackend.length){
+							local5.push('0');
+						}
+						while (!((local5.length % 2) == (0 % 2))){
+							TerrainBackend.push('0');
+							local5.push('0');
+						}
+						for (let j = 0; j < TerrainBackend.length; j++){
+							TerrainBackend.splice(j, 1, (Number(local5[j]) | Number(TerrainBackend[j])));
+						}
+						
+						TerrainData = local5.join('');
+					}
+				}
+			}
+			let local7 =[];
+			for (let j = 0; j < ((TerrainBackend.length) / 2); j++){
+				local7.push(parseInt(`${TerrainBackend[(2 * j)]}` + `${TerrainBackend[(2 * j) + 1]}`, 4).toString(16).toUpperCase());
+			}
+			TerrainData = local7.join('');
+			return '0x' + TerrainData + '||0x' + ColorData + '';
+		}
+		case 8: {
+			for (i = 0; i < local2.length; i++){
+				switch(true){
+					case (/^color[0]{0,1}\x2D0x[0-9A-Fa-f]{6}$/.test(local2[i])) : {
+						let local3 = /^color[0]{0,1}\x2D0x([0-9A-Fa-f]{6})$/.exec(local2[i]);
+						ColorData = local3[1].toUpperCase();
+						break;
+					}
+					case (/^terrain\x2D/.test(local2[i])) : {
+						let local3 = (/pos\x2D([\x2A0-o]+)/.exec(local2[i]))[1];
+						let local4 = '';
+						let local5 = [];
+						let local6 = [];
+						while(!/^[0-o]+$/.test(local3)){
+							local4 = (/[0-o]([\x2A]{1,})[0-o]/g.exec(local3))[1];
+							local5 = (new RegExp("([0-o]{" + local4.length + "})([\x2A]{" + local4.length + "})([0-o]{1})")).exec(local3);
+							local4 = local5[1].repeat(local5[3].charCodeAt(0) - 48);
+							local3 = local3.split(local5[1] + local5[2] + local5[3]).join(local4);
+						}
+						local5 = local3.split('');
+						for (let j = 0; j < local5.length; j++){
+							local5.splice(j, 1, (local5[j].charCodeAt(0) - 48).toString(2).padStart(6, '0'));
+						}
+						local5 = local5.join('').split('');
+						while ((local5.length % 8) != 0){
+							local5.push('0');
+						}
+						for (let j = 0; j < (local5.length / 8); j += 0.5){
+							for (let k = 0; k < 8; k++){
+								local6.push((local5.slice(8 * Math.floor(j), 8 * Math.floor(j + 1)))[k]);
+							}
+						}
+						local5 = [];
+						for (let j = 0; j < local6.length; j++){
+							local5.push(local6[j], local6[j]);
+						}
+						local6 = [];
+						for (let j = 0; j < (local5.length / 4); j++){
+							local6.push(parseInt(local5.slice(4 * j, 4 * (j + 1)).join(''), 2));
+						}
+						while (TerrainBackend.length > local6.length){
+							local6.push('0');
+						}
+						while (TerrainBackend.length < local6.length){
+							TerrainBackend.push('0');
+						}
+						for (j = 0; j < TerrainBackend.length; j++){
+							TerrainBackend.splice(j, 1, (local6[j] | TerrainBackend[j]));
+						}
+					}
+				}
+			}
+			let local7 = [];
+			for (i = 0; i < TerrainBackend.length; i++){
+				local7.push((TerrainBackend[i]).toString(16).toUpperCase());
+			}
+			TerrainData = local7.join('');
+			return '0x' + TerrainData + '||0x' + ColorData + '';
+		}
+		case 4: {
+			for (i = 0; i < local2.length; i++){
+				switch(true){
+					case (/^color[0]{0,1}\x2D0x[0-9A-Fa-f]{6}$/.test(local2[i])) : {
+						let local3 = /^color[0]{0,1}\x2D0x([0-9A-Fa-f]{6})$/.exec(local2[i]);
+						ColorData = local3[1].toUpperCase();
+						break;
+					}
+					case (/^terrain\x2D/.test(local2[i])) : {
+						let local3 = (/pos\x2D([\x2A0-o]+)/.exec(local2[i]))[1];
+						let local4 = '';
+						let local5 = [];
+						let local6 = [];
+						while(!/^[0-o]+$/.test(local3)){
+							local4 = (/[0-o]([\x2A]{1,})[0-o]/g.exec(local3))[1];
+							local5 = (new RegExp("([0-o]{" + local4.length + "})([\x2A]{" + local4.length + "})([0-o]{1})")).exec(local3);
+							local4 = local5[1].repeat(local5[3].charCodeAt(0) - 48);
+							local3 = local3.split(local5[1] + local5[2] + local5[3]).join(local4);
+						}
+						local5 = local3.split('');
+						for (let j = 0; j < local5.length; j++){
+							local5.splice(j, 1, (local5[j].charCodeAt(0) - 48).toString(2).padStart(6, '0'));
+						}
+						local5 = local5.join('').split('');
+						while ((local5.length % 4) != 0){
+							local5.push('0');
+						}
+						for (let j = 0; j < (local5.length / 4); j += 0.25){
+							for (let k = 0; k < 4; k++){
+								local6.push((local5.slice(4 * Math.floor(j), 4 * Math.floor(j + 1)))[k]);
+							}
+						}
+						local5 = [];
+						for (let j = 0; j < local6.length; j++){
+							local5.push(local6[j], local6[j], local6[j], local6[j]);
+						}
+						local6 = [];
+						for (let j = 0; j < (local5.length / 4); j++){
+							local6.push(parseInt(local5.slice(4 * j, 4 * (j + 1)).join(''), 2));
+						}
+						while (TerrainBackend.length > local6.length){
+							local6.push('0');
+						}
+						while (TerrainBackend.length < local6.length){
+							TerrainBackend.push('0');
+						}
+						for (j = 0; j < TerrainBackend.length; j++){
+							TerrainBackend.splice(j, 1, (local6[j] | TerrainBackend[j]));
+						}
+					}
+				}
+			}
+			let local7 = [];
+			for (i = 0; i < TerrainBackend.length; i++){
+				local7.push((TerrainBackend[i]).toString(16).toUpperCase());
+			}
+			TerrainData = local7.join('');
+			return '0x' + TerrainData + '||0x' + ColorData + '';
+		}
+		default: {
+			alert('I can\'t coerce this level\'s data to chunk size 16.');
+			return null;
+		}
+	}
+}
+</script><style>
+body {
+	background-image: url("https://player03.com/run/3/beta/img/singledpi/texture/Skybox5.png");
+	background-color: black;
+}
+label {
+	color:white;
+}
+</style></html>
