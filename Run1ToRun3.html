@@ -8,6 +8,7 @@ var TerrainBackend = [];
 var ColorData = 'FFFFFF';
 var SpawnData = [];
 var SpawnBackend = [];
+var WhatWasThere = 'Converted data will replace this text';
 function ClearAndRebuild(){
 	TerrainData = '1';
 	TerrainBackend = [];
@@ -16,16 +17,18 @@ function ClearAndRebuild(){
 	SpawnBackend = [];
 }
 function parseRun1(){
-	flurb.innerHTML = run1ToRun3(document.getElementById('run1DataInput').value);
+	WhatWasThere = run1ToRun3(document.getElementById('run1DataInput').value);
+	flurb.innerHTML = WhatWasThere;
 }
 function parseRun3(){
-	flurb.innerHTML = run3ToRun1(document.getElementById('run3DataInput').value);
+	WhatWasThere = run3ToRun1(document.getElementById('run3DataInput').value);
+	flurb.innerHTML = WhatWasThere;
 }
 function run1ToRun3(param1){
 	ClearAndRebuild();
 	if(!/0x[0-9A-Fa-f]+\x7C[\x20-\x7B\x7D\x7E]*\x7C0x[0-9A-Fa-f]{6}/.test(param1)){
 		alert('Use some run 1 level data.');
-		return null;
+		return WhatWasThere;
 	}
 	else{
 		let local1 = /0x([0-9A-Fa-f]+)\x7C[\x20-\x7B\x7D\x7E]*\x7C0x([0-9A-Fa-f]{6})/.exec(param1);
@@ -79,7 +82,7 @@ function run3ToRun1(param1){
 	let local2 = param1.split('|');
 	if (!(/layout\x2Dtunnel/.test(local1)) || (local2 == null)){
 		alert('Use some Run 3 level data.');
-		return null;
+		return WhatWasThere;
 	}
 	switch (Number(local1[1]) * Number(local1[2])){
 		case 16: {
@@ -296,9 +299,9 @@ function run3ToRun1(param1){
 		if (/0{4}$/.test(local9)){
 			local9 = (/^([0-9A-F]+)0{4}$/.exec(local9))[1];
 		}
-		TerrainArray.push('spawn-' + SpawnData[i] + ' interpolation:\n0x' + local9 + '||0x' + ColorData + '');
+		TerrainArray.push('spawn-' + SpawnData[i] + ' interpolation:\r\n0x' + local9 + '||0x' + ColorData + '');
 	}
-	return TerrainArray.join('\n\n');
+	return TerrainArray.join('\r\n');
 }
 </script><style>
 body {
